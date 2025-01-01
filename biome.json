@@ -1,0 +1,12 @@
+{
+	"formatter": {
+		"lineWidth": 160
+	},
+	"linter": {
+		"rules": {
+			"style": {
+				"noNonNullAssertion": "off"
+			}
+		}
+	}
+}
