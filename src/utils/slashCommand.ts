@@ -31,6 +31,6 @@ export const snapCommand = new SlashCommandBuilder()
 	.addIntegerOption((option) => {
 		return option.setName("width").setDescription("The width of the image").setRequired(false);
 	})
-	.addIntegerOption((option) => {
+	.addNumberOption((option) => {
 		return option.setName("scale").setDescription("The scale of the image").setRequired(false);
 	});

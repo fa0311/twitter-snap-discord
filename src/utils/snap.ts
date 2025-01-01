@@ -16,13 +16,21 @@ export const snap = async (url: string, service: string, id: string, width: numb
 	});
 	const render = await client.getRender({ limit: 1, session });
 	await client.run(render, async (run) => {
-		const res = await run({
+		const output = await run({
 			theme: "RenderOceanBlueColor",
 			font,
 			width,
 			scale,
-			output: `storage/${service}/${id}.png`,
+			output: `storage/${service}/${id}/output.{if-type:png:mp4:json:}`,
 		});
-		await res.file.tempCleanup();
+		const low = await run({
+			theme: "RenderOceanBlueColor",
+			font,
+			width: 650,
+			scale: 1,
+			output: `storage/${service}/${id}/low.png`,
+		});
+
+		await low.file.tempCleanup();
 	});
 };

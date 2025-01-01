@@ -17,22 +17,48 @@ serve({ fetch: app.fetch, port: Number(HTTP_SERVER_PORT) });
 const client = new Client({ intents: ["Guilds", "GuildMessages", "MessageContent"] });
 client.login(DISCORD_TOKEN);
 
+const check = async (service: string, id: string) => {
+	if (await exists(`./storage/${service}/${id}/output.png`)) {
+		return [`${HTTP_BASE}/storage/${service}/${id}/output.png`, `${HTTP_BASE}/storage/${service}/${id}/low.png`];
+	}
+	if (await exists(`./storage/${service}/${id}/output.mp4`)) {
+		return [`${HTTP_BASE}/storage/${service}/${id}/output.mp4`, `${HTTP_BASE}/storage/${service}/${id}/low.png`];
+	}
+	return null;
+};
+
+const regexList = () => {
+	return [TWITTER_REGEX, PIXIV_REGEX].map((regex) => new RegExp(regex, "g"));
+};
+
 client.on("messageCreate", async (message) => {
-	const matches = [TWITTER_REGEX, PIXIV_REGEX].flatMap((regex) => [...message.content.matchAll(regex)]);
+	if (message.author.bot) return;
+	if (!message.guild) return;
+	if (!message.guild.channels.cache.some((channel) => channel.name === "twitter-snap")) return;
+	const matches = regexList().flatMap((regex) => [...message.content.matchAll(regex)]);
+	const processing = await message.reply("Processing...");
+
+	const files = [];
+	const content = [];
 	for (const match of matches) {
 		const { service, id } = match.groups!;
-		if (await exists(`./storage/${service}/${id}.png`)) {
-			await message.reply(`${HTTP_BASE}/storage/${service}/${id}.png`);
+		const file = await check(service, id);
+		if (file) {
+			content.push(`Cached ${file[0]}`);
+			files.push(file[1]);
 		} else {
-			const processing = await message.reply(`Processing ${service} ${id}`);
 			try {
+				console.log(`Processing ${match[0]}`);
 				await snap(match[0], service, id, 1440, 2);
-				await processing.edit(`${HTTP_BASE}/storage/${service}/${id}.png`);
+				const file = (await check(service, id))!;
+				content.push(`Processed ${file[0]}`);
+				files.push(file[1]);
 			} catch (e) {
-				await processing.edit(`Failed to process ${service} ${id}`);
+				content.push("Failed to process image");
 			}
 		}
 	}
+	await processing.edit({ files, content: content.join("\n") });
 });
 
 client.on("interactionCreate", async (interaction) => {
@@ -42,9 +68,9 @@ client.on("interactionCreate", async (interaction) => {
 	const url = interaction.options.getString("url")!;
 	const theme = interaction.options.getString("theme");
 	const width = interaction.options.getInteger("width");
-	const scale = interaction.options.getInteger("scale");
+	const scale = interaction.options.getNumber("scale");
 
-	if (!PIXIV_REGEX.test(url) && !TWITTER_REGEX.test(url)) {
+	if (!regexList().some((regex) => regex.test(url))) {
 		await interaction.reply("Invalid URL");
 		return;
 	}
@@ -64,13 +90,17 @@ client.on("interactionCreate", async (interaction) => {
 		return;
 	}
 
-	const { service, id } = [TWITTER_REGEX, PIXIV_REGEX].find((regex) => regex.test(url))!.exec(url)!.groups!;
-	if (await exists(`./storage/${service}/${id}.png`)) {
-		await interaction.reply(`${HTTP_BASE}/storage/${service}/${id}.png`);
+	const { service, id } = regexList().flatMap((regex) => [...url.matchAll(regex)])[0].groups!;
+	const file = await check(service, `${id}-${width}-${scale}`);
+
+	if (file) {
+		await interaction.reply({ files: [file[1]], content: `Cached ${file[0]}` });
 	} else {
 		try {
-			await snap(url, service, id, width ?? 1440, scale ?? 2);
-			await interaction.reply(`${HTTP_BASE}/storage/${service}/${id}.png`);
+			console.log(`Processing ${url}`);
+			await snap(url, service, `${id}-${width}-${scale}`, width ?? 1440, scale ?? 2);
+			const file = (await check(service, id))!;
+			await interaction.reply({ files: [file[1]], content: `Processed ${file[0]}` });
 		} catch (e) {
 			await interaction.reply("Failed to process image");
 		}
