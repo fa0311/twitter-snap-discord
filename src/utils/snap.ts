@@ -21,6 +21,7 @@ export const snap = async (url: string, service: string, id: string, width: numb
 			font,
 			width,
 			scale,
+			ffmpegTimeout: 60,
 			output: `storage/${service}/${id}/output.{if-type:png:mp4:json:}`,
 		});
 		const low = await run({

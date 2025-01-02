@@ -21,8 +21,8 @@ importers:
         specifier: ^4.6.15
         version: 4.6.15
       twitter-snap:
-        specifier: ^0.0.64
-        version: 0.0.64(typescript@5.7.2)
+        specifier: ^0.0.65
+        version: 0.0.65(typescript@5.7.2)
     devDependencies:
       '@types/node':
         specifier: ^20.17.11
@@ -1232,8 +1232,8 @@ packages:
   twitter-openapi-typescript@0.0.45:
     resolution: {integrity: sha512-WYNyOAciU21t5ohL981GTaO4zTmgLd1kr5AEoAIZsIs08vW95QsBCKjMAmOS+J0ue41QuMjpzyMTH6wLjUSS2g==}
 
-  twitter-snap@0.0.64:
-    resolution: {integrity: sha512-6gfofrx+WV/NeBfqCA21I6FPM1YIU2zT3C7ZvDbxiJMZE4QbhI93DsNUi6qDQnBZPJ0JK5OuoA3b4CgrAjW5Bw==}
+  twitter-snap@0.0.65:
+    resolution: {integrity: sha512-nK085UkQvBl3Z4k/SFyPmzj1sLskjdywbnbjiQDJbbUd348yJlo3N+C0b1L0FJFGDjSpJUdKkzDWXPir3Qe+Vw==}
     engines: {node: '>=18.0.0'}
     hasBin: true
 
@@ -2502,7 +2502,7 @@ snapshots:
     dependencies:
       twitter-openapi-typescript-generated: 0.0.32
 
-  twitter-snap@0.0.64(typescript@5.7.2):
+  twitter-snap@0.0.65(typescript@5.7.2):
     dependencies:
       '@clack/prompts': 0.9.0
       '@oclif/core': 4.2.0
