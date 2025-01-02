@@ -34,7 +34,7 @@ const regexList = () => {
 client.on("messageCreate", async (message) => {
 	if (message.author.bot) return;
 	if (!message.guild) return;
-	if (!message.guild.channels.cache.some((channel) => channel.name === "twitter-snap")) return;
+	if (!message.guild.channels.cache.some((channel) => channel.name.includes("twitter-snap"))) return;
 	const matches = regexList().flatMap((regex) => [...message.content.matchAll(regex)]);
 	if (matches.length > 0) {
 		const processing = await message.reply("Processing...");
@@ -50,7 +50,7 @@ client.on("messageCreate", async (message) => {
 			} else {
 				try {
 					console.log(`Processing ${match[0]}`);
-					await snap(match[0], service, id, 1440, 2);
+					await snap(match[0], service, id, 1440, 2, "RenderOceanBlueColor");
 					const file = (await check(service, id))!;
 					content.push(`Processed ${file[0]}`);
 					files.push(file[1]);
@@ -65,12 +65,11 @@ client.on("messageCreate", async (message) => {
 
 client.on("interactionCreate", async (interaction) => {
 	if (!interaction.isChatInputCommand()) return;
-	interaction.deferReply();
 
 	const url = interaction.options.getString("url")!;
-	const theme = interaction.options.getString("theme");
-	const width = interaction.options.getInteger("width");
-	const scale = interaction.options.getNumber("scale");
+	const theme = interaction.options.getString("theme") ?? "RenderOceanBlueColor";
+	const width = interaction.options.getInteger("width") ?? 1440;
+	const scale = interaction.options.getNumber("scale") ?? 2;
 
 	if (!regexList().some((regex) => regex.test(url))) {
 		await interaction.reply("Invalid URL");
@@ -93,18 +92,19 @@ client.on("interactionCreate", async (interaction) => {
 	}
 
 	const { service, id } = regexList().flatMap((regex) => [...url.matchAll(regex)])[0].groups!;
-	const file = await check(service, `${id}-${width}-${scale}`);
+	const file = await check(service, `${id}-${theme}-${width}-${scale}`);
 
 	if (file) {
 		await interaction.reply({ files: [file[1]], content: `Cached ${file[0]}` });
 	} else {
+		await interaction.deferReply();
 		try {
 			console.log(`Processing ${url}`);
-			await snap(url, service, `${id}-${width}-${scale}`, width ?? 1440, scale ?? 2);
-			const file = (await check(service, id))!;
-			await interaction.reply({ files: [file[1]], content: `Processed ${file[0]}` });
+			await snap(url, service, `${id}-${theme}-${width}-${scale}`, width, scale, theme);
+			const file = (await check(service, `${id}-${theme}-${width}-${scale}`))!;
+			await interaction.editReply({ files: [file[1]], content: `Processed ${file[0]}` });
 		} catch (e) {
-			await interaction.reply("Failed to process image");
+			await interaction.editReply("Failed to process image");
 		}
 	}
 });

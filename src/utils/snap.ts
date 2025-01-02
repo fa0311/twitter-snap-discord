@@ -5,19 +5,20 @@ export type FontOptions = Awaited<ReturnType<ReturnType<typeof getSnapAppRender>
 export type Session = Awaited<ReturnType<ReturnType<typeof getSnapAppRender>["login"]>>;
 export type SnapApp = Awaited<ReturnType<typeof getSnapAppRender>>;
 
-const sessionCache = simpleCache<[SnapApp, Session, FontOptions]>();
+const sessionCache = simpleCache<[Session, FontOptions]>();
 
-export const snap = async (url: string, service: string, id: string, width: number, scale: number) => {
-	const [client, session, font] = await sessionCache(service, async () => {
+export const snap = async (url: string, service: string, id: string, width: number, scale: number, theme: string) => {
+	const [session, font] = await sessionCache(service, async () => {
 		const client = getSnapAppRender({ url: url });
 		const font = await client.getFont();
 		const session = await client.login({ sessionType: "file", cookiesFile: "cookies.json" });
-		return [client, session, font] as const;
+		return [session, font] as const;
 	});
+	const client = getSnapAppRender({ url: url });
 	const render = await client.getRender({ limit: 1, session });
 	await client.run(render, async (run) => {
 		const output = await run({
-			theme: "RenderOceanBlueColor",
+			theme,
 			font,
 			width,
 			scale,
@@ -25,7 +26,7 @@ export const snap = async (url: string, service: string, id: string, width: numb
 			output: `storage/${service}/${id}/output.{if-type:png:mp4:json:}`,
 		});
 		const low = await run({
-			theme: "RenderOceanBlueColor",
+			theme,
 			font,
 			width: 650,
 			scale: 1,

@@ -1,8 +1,8 @@
-```
-npm install
-npm run dev
-```
+# twitter-snap-discord
 
-```
-open http://localhost:3000
+```env
+# .env
+DISCORD_TOKEN=XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+HTTP_SERVER_PORT=3000
+HTTP_BASE=https://example.com
 ```
