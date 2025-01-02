@@ -36,29 +36,31 @@ client.on("messageCreate", async (message) => {
 	if (!message.guild) return;
 	if (!message.guild.channels.cache.some((channel) => channel.name === "twitter-snap")) return;
 	const matches = regexList().flatMap((regex) => [...message.content.matchAll(regex)]);
-	const processing = await message.reply("Processing...");
+	if (matches.length > 0) {
+		const processing = await message.reply("Processing...");
 
-	const files = [];
-	const content = [];
-	for (const match of matches) {
-		const { service, id } = match.groups!;
-		const file = await check(service, id);
-		if (file) {
-			content.push(`Cached ${file[0]}`);
-			files.push(file[1]);
-		} else {
-			try {
-				console.log(`Processing ${match[0]}`);
-				await snap(match[0], service, id, 1440, 2);
-				const file = (await check(service, id))!;
-				content.push(`Processed ${file[0]}`);
+		const files = [];
+		const content = [];
+		for (const match of matches) {
+			const { service, id } = match.groups!;
+			const file = await check(service, id);
+			if (file) {
+				content.push(`Cached ${file[0]}`);
 				files.push(file[1]);
-			} catch (e) {
-				content.push("Failed to process image");
+			} else {
+				try {
+					console.log(`Processing ${match[0]}`);
+					await snap(match[0], service, id, 1440, 2);
+					const file = (await check(service, id))!;
+					content.push(`Processed ${file[0]}`);
+					files.push(file[1]);
+				} catch (e) {
+					content.push("Failed to process image");
+				}
 			}
 		}
+		await processing.edit({ files, content: content.join("\n") });
 	}
-	await processing.edit({ files, content: content.join("\n") });
 });
 
 client.on("interactionCreate", async (interaction) => {
