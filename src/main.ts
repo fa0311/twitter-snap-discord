@@ -19,7 +19,7 @@ client.login(DISCORD_TOKEN);
 
 const check = async (service: string, id: string) => {
 	if (await exists(`./storage/${service}/${id}/output.png`)) {
-		return [`${HTTP_BASE}/storage/${service}/${id}/output.png`, `${HTTP_BASE}/storage/${service}/${id}/low.png`];
+		return [`${HTTP_BASE}/storage/${service}/${id}/output.png`, `${HTTP_BASE}/storage/${service}/${id}/output.png`];
 	}
 	if (await exists(`./storage/${service}/${id}/output.mp4`)) {
 		return [`${HTTP_BASE}/storage/${service}/${id}/output.mp4`, `${HTTP_BASE}/storage/${service}/${id}/low.png`];
@@ -34,7 +34,8 @@ const regexList = () => {
 client.on("messageCreate", async (message) => {
 	if (message.author.bot) return;
 	if (!message.guild) return;
-	if (!message.guild.channels.cache.some((channel) => channel.name.includes("twitter-snap"))) return;
+	if (!message.guild.channels.cache.find((channel) => channel.id === message.channelId)?.name.includes("twitter-snap")) return;
+
 	const matches = regexList().flatMap((regex) => [...message.content.matchAll(regex)]);
 	if (matches.length > 0) {
 		const processing = await message.reply("Processing...");

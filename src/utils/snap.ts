@@ -1,4 +1,5 @@
 import { getSnapAppRender } from "twitter-snap";
+import { exists } from "./exists.js";
 import simpleCache from "./simpleCache.js";
 
 export type FontOptions = Awaited<ReturnType<ReturnType<typeof getSnapAppRender>["getFont"]>>;
@@ -25,14 +26,16 @@ export const snap = async (url: string, service: string, id: string, width: numb
 			ffmpegTimeout: 60,
 			output: `storage/${service}/${id}/output.{if-type:png:mp4:json:}`,
 		});
-		const low = await run({
-			theme,
-			font,
-			width: 650,
-			scale: 1,
-			output: `storage/${service}/${id}/low.png`,
-		});
 
-		await low.file.tempCleanup();
+		if (!(await exists(`./storage/${service}/${id}/output.png`))) {
+			const low = await run({
+				theme,
+				font,
+				width: 650,
+				scale: 1,
+				output: `storage/${service}/${id}/low.png`,
+			});
+			await low.file.tempCleanup();
+		}
 	});
 };
