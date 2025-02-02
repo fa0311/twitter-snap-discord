@@ -17,6 +17,7 @@ HTTP_BASE=https://example.com
 
 ```json
 [{"domain":".x.com","expirationDate":1762434530.708053,"hostOnly":false,"httpOnly":false,"name":"xxxxxxxxx","path":"/","sameSite":"no_restriction","secure":true,"session":false,"storeId":"0","value":"xxxxxxxxxxxxx"}]
+```
 
 ## Output
 
