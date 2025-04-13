@@ -36,7 +36,8 @@ client.on("messageCreate", async (message) => {
 	if (!message.guild) return;
 	if (!message.guild.channels.cache.find((channel) => channel.id === message.channelId)?.name.includes("twitter-snap")) return;
 
-	const matches = regexList().flatMap((regex) => [...message.content.matchAll(regex)]);
+	const contents = message.content.replace("fxtwitter.com", "twitter.com").replace("vxtwitter.com", "twitter.com");
+	const matches = regexList().flatMap((regex) => [...contents.matchAll(regex)]);
 	if (matches.length > 0) {
 		const processing = await message.reply("Processing...");
 

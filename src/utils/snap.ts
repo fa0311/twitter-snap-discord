@@ -24,6 +24,7 @@ export const snap = async (url: string, service: string, id: string, width: numb
 			width,
 			scale,
 			ffmpegTimeout: 60,
+			ffmpegAdditonalOption: ["-c:v", "hevc_nvenc"],
 			output: `storage/${service}/${id}/output.{if-type:png:mp4:json:}`,
 		});
 

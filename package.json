@@ -11,7 +11,7 @@
 		"discord.js": "^14.16.3",
 		"dotenv": "^16.4.7",
 		"hono": "^4.6.15",
-		"twitter-snap": "^0.0.65"
+		"twitter-snap": "^0.0.75"
 	},
 	"devDependencies": {
 		"@types/node": "^20.17.11",
