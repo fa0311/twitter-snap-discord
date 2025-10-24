@@ -10,7 +10,7 @@
 		"@hono/node-server": "^1.13.7",
 		"discord.js": "^14.16.3",
 		"dotenv": "^16.4.7",
-		"hono": "^4.6.15",
+		"hono": "^4.10.3",
 		"twitter-snap": "^0.0.75"
 	},
 	"devDependencies": {
