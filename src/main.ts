@@ -1,8 +1,9 @@
-import { Client, MessageFlags, Routes } from "discord.js";
+import { Client, Routes } from "discord.js";
 import { Readable } from "node:stream";
 import { pipeline } from "node:stream/promises";
 import pino from "pino";
 import { getEnv } from "./env.js";
+import { createIntractionChain, createMessageChain } from "./utils/discord.js";
 import { createMutex } from "./utils/mutex.js";
 import { TWITTER_REGEX } from "./utils/regex.js";
 import { snapCommand } from "./utils/slashCommand.js";
@@ -54,9 +55,10 @@ const twitterSnap = async (param: { url: string; id: string }) => {
 	);
 	const exists = existsCheck.find(([_, exists]) => exists);
 	if (exists) {
+		console.log(`Exists ${param.url}`);
 		return exists[0];
 	} else {
-		console.log(`Processing ${param.url}`);
+		log.info(`Processing ${param.url}`);
 
 		const res = await snap.twitter(param.id);
 		const ext = getExtByContentType(res.contentType);
@@ -80,49 +82,54 @@ client.on("messageCreate", async (message) => {
 	if (!message.guild.channels.cache.find((channel) => channel.id === message.channelId)?.name.includes("twitter-snap")) return;
 
 	const matches = [...message.content.matchAll(new RegExp(TWITTER_REGEX, "g"))];
+	const chain = createMessageChain(message);
 	try {
 		if (matches.length > 0) {
 			if (mutex.isBusy(env.MUTEX_VALUE * 10)) {
-				await message.reply({ content: "Server is busy, please try again later." });
+				log.warn("Server is busy");
+				await chain.reply({ content: "Server is busy, please try again later." });
 				return;
 			}
 			if (mutex.isLocked()) {
-				await message.reply({ content: "Your request is queued, please wait..." });
+				log.warn("Request is queued");
+				await chain.reply({ content: "Your request is queued, please wait..." });
 			}
 
 			await mutex.runExclusive(async () => {
-				const processing = await message.reply({ content: "Processing..." });
+				await chain.reply({ content: "Processing..." });
 				const res = await syncLoop(matches, async (match) => {
 					const { id } = match.groups!;
 					return twitterSnap({ url: match[0], id: id! });
 				});
-				await processing.edit({
+				await chain.reply({
 					content: `Snapped successfully:\n${res.join("\n")}`,
 				});
 			});
 		}
 	} catch (e) {
 		log.error(e);
-		message.reply({ content: "Failed to process the URLs." });
+		await chain.reply({ content: "Failed to process the URLs." });
 	}
 });
 
 client.on("interactionCreate", async (interaction) => {
 	if (!interaction.isChatInputCommand()) return;
-
 	const url = interaction.options.getString("url")!;
 
+	const chain = createIntractionChain(interaction);
+
 	if (!new RegExp(TWITTER_REGEX, "g").test(url)) {
-		await interaction.reply({ content: "Invalid URL", flags: [MessageFlags.Ephemeral] });
+		await chain.reply({ content: "Invalid URL", ephemeral: true });
 		return;
 	}
 
-	await interaction.deferReply();
+	await chain.deferReply();
 	try {
 		const { id } = [...url.matchAll(new RegExp(TWITTER_REGEX, "g"))][0]!.groups!;
 
 		if (mutex.isBusy(env.MUTEX_VALUE * 10)) {
-			await interaction.reply({ content: "Server is busy, please try again later.", flags: [MessageFlags.Ephemeral] });
+			log.warn("Server is busy");
+			await chain.reply({ content: "Server is busy, please try again later.", ephemeral: true });
 			return;
 		}
 
@@ -130,12 +137,12 @@ client.on("interactionCreate", async (interaction) => {
 			return [await twitterSnap({ url: url, id: id! })];
 		});
 
-		await interaction.editReply({
+		await chain.reply({
 			content: `Snapped successfully:\n${res.join("\n")}`,
 		});
 	} catch (e) {
 		log.error(e);
-		interaction.editReply({ content: "Failed to process the URL." });
+		await chain.reply({ content: "Failed to process the URL." });
 	}
 });
 
