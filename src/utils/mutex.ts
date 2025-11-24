@@ -17,7 +17,7 @@ export const createMutex = (value: number) => {
 		return semaphore.isLocked();
 	};
 	const isBusy = (value: number) => {
-		return semaphore.getValue() < value;
+		return semaphore.getValue() > value;
 	};
 
 	return { runExclusive, isLocked, isBusy };
