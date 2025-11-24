@@ -14,6 +14,10 @@ const env = parseEnv(
 		TWITTER_SNAP_API_BASEURL: z.string(),
 
 		DISCORD_TOKEN: z.string(),
+		MUTEX_VALUE: z
+			.string()
+			.transform((val) => parseInt(val, 10))
+			.default(1),
 	}),
 );
 

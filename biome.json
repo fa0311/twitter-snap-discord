@@ -1,13 +1,18 @@
 {
+	"$schema": "https://biomejs.dev/schemas/2.3.7/schema.json",
 	"formatter": {
 		"lineWidth": 160
 	},
 	"linter": {
+		"enabled": true,
 		"rules": {
+			"recommended": true,
 			"style": {
 				"noNonNullAssertion": "off"
+			},
+			"nursery": {
+				"noFloatingPromises": "error"
 			}
 		}
 	}
 }
-

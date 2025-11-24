@@ -13,5 +13,12 @@ export const createMutex = (value: number) => {
 				});
 		});
 	};
-	return { runExclusive };
+	const isLocked = () => {
+		return semaphore.isLocked();
+	};
+	const isBusy = (value: number) => {
+		return semaphore.getValue() < value;
+	};
+
+	return { runExclusive, isLocked, isBusy };
 };

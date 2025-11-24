@@ -1,4 +1,4 @@
-import { Client, Routes } from "discord.js";
+import { Client, MessageFlags, Routes } from "discord.js";
 import { Readable } from "node:stream";
 import { pipeline } from "node:stream/promises";
 import pino from "pino";
@@ -34,7 +34,7 @@ const storage = createWebdavClient({
 const snap = await createTwitterSnapClient({
 	baseurl: env.TWITTER_SNAP_API_BASEURL,
 });
-const mutex = createMutex(1);
+const mutex = createMutex(env.MUTEX_VALUE);
 
 const syncLoop = async <T1, T2>(items: T1[], callback: (item: T1) => Promise<T2>) => {
 	const res: T2[] = [];
@@ -82,22 +82,28 @@ client.on("messageCreate", async (message) => {
 	const matches = [...message.content.matchAll(new RegExp(TWITTER_REGEX, "g"))];
 	try {
 		if (matches.length > 0) {
-			const processing = await message.reply("Processing...");
+			if (mutex.isBusy(env.MUTEX_VALUE * 10)) {
+				await message.reply({ content: "Server is busy, please try again later." });
+				return;
+			}
+			if (mutex.isLocked()) {
+				await message.reply({ content: "Your request is queued, please wait..." });
+			}
 
-			const res = await mutex.runExclusive(async () => {
-				return await syncLoop(matches, async (match) => {
+			await mutex.runExclusive(async () => {
+				const processing = await message.reply({ content: "Processing..." });
+				const res = await syncLoop(matches, async (match) => {
 					const { id } = match.groups!;
 					return twitterSnap({ url: match[0], id: id! });
 				});
-			});
-
-			await processing.edit({
-				content: `Snapped successfully:\n${res.join("\n")}`,
+				await processing.edit({
+					content: `Snapped successfully:\n${res.join("\n")}`,
+				});
 			});
 		}
 	} catch (e) {
 		log.error(e);
-		message.reply("Failed to process the URLs.");
+		message.reply({ content: "Failed to process the URLs." });
 	}
 });
 
@@ -107,13 +113,18 @@ client.on("interactionCreate", async (interaction) => {
 	const url = interaction.options.getString("url")!;
 
 	if (!new RegExp(TWITTER_REGEX, "g").test(url)) {
-		await interaction.reply("Invalid URL");
+		await interaction.reply({ content: "Invalid URL", flags: [MessageFlags.Ephemeral] });
 		return;
 	}
 
 	await interaction.deferReply();
 	try {
 		const { id } = [...url.matchAll(new RegExp(TWITTER_REGEX, "g"))][0]!.groups!;
+
+		if (mutex.isBusy(env.MUTEX_VALUE * 10)) {
+			await interaction.reply({ content: "Server is busy, please try again later.", flags: [MessageFlags.Ephemeral] });
+			return;
+		}
 
 		const res = await mutex.runExclusive(async () => {
 			return [await twitterSnap({ url: url, id: id! })];
@@ -124,7 +135,7 @@ client.on("interactionCreate", async (interaction) => {
 		});
 	} catch (e) {
 		log.error(e);
-		interaction.editReply("Failed to process the URL.");
+		interaction.editReply({ content: "Failed to process the URL." });
 	}
 });
 
