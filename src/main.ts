@@ -3,6 +3,7 @@ import { Readable } from "node:stream";
 import { pipeline } from "node:stream/promises";
 import pino from "pino";
 import { getEnv } from "./env.js";
+import { createMutex } from "./utils/mutex.js";
 import { TWITTER_REGEX } from "./utils/regex.js";
 import { snapCommand } from "./utils/slashCommand.js";
 import { createWebdavClient } from "./utils/storage.js";
@@ -33,6 +34,7 @@ const storage = createWebdavClient({
 const snap = await createTwitterSnapClient({
 	baseurl: env.TWITTER_SNAP_API_BASEURL,
 });
+const mutex = createMutex(1);
 
 const syncLoop = async <T1, T2>(items: T1[], callback: (item: T1) => Promise<T2>) => {
 	const res: T2[] = [];
@@ -82,9 +84,11 @@ client.on("messageCreate", async (message) => {
 		if (matches.length > 0) {
 			const processing = await message.reply("Processing...");
 
-			const res = await syncLoop(matches, async (match) => {
-				const { id } = match.groups!;
-				return twitterSnap({ url: match[0], id: id! });
+			const res = await mutex.runExclusive(async () => {
+				return await syncLoop(matches, async (match) => {
+					const { id } = match.groups!;
+					return twitterSnap({ url: match[0], id: id! });
+				});
 			});
 
 			await processing.edit({
@@ -111,10 +115,12 @@ client.on("interactionCreate", async (interaction) => {
 	try {
 		const { id } = [...url.matchAll(new RegExp(TWITTER_REGEX, "g"))][0]!.groups!;
 
-		const res = await twitterSnap({ url: url, id: id! });
+		const res = await mutex.runExclusive(async () => {
+			return [await twitterSnap({ url: url, id: id! })];
+		});
 
 		await interaction.editReply({
-			content: `Snapped successfully:\n${res}`,
+			content: `Snapped successfully:\n${res.join("\n")}`,
 		});
 	} catch (e) {
 		log.error(e);
