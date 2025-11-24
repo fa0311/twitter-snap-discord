@@ -1,4 +1,4 @@
-import { Client, EmbedBuilder, Routes } from "discord.js";
+import { Client, Routes } from "discord.js";
 import { Readable } from "node:stream";
 import { pipeline } from "node:stream/promises";
 import pino from "pino";
@@ -7,7 +7,6 @@ import { TWITTER_REGEX } from "./utils/regex.js";
 import { snapCommand } from "./utils/slashCommand.js";
 import { createWebdavClient } from "./utils/storage.js";
 import { createTwitterSnapClient, getExtByContentType } from "./utils/twitter-snap.js";
-import { unzip } from "./utils/zip.js";
 
 const env = await getEnv();
 
@@ -43,7 +42,7 @@ const syncLoop = async <T1, T2>(items: T1[], callback: (item: T1) => Promise<T2>
 	return res;
 };
 
-const twitterSnap = async (param: { url: string; id: string }): Promise<[string, string]> => {
+const twitterSnap = async (param: { url: string; id: string }) => {
 	const existsCheck = await Promise.all(
 		["png", "mp4"].map(async (ext) => {
 			const path = storage.path(`${param.id}.${ext}`);
@@ -53,7 +52,7 @@ const twitterSnap = async (param: { url: string; id: string }): Promise<[string,
 	);
 	const exists = existsCheck.find(([_, exists]) => exists);
 	if (exists) {
-		return [`Cached ${param.url}`, exists[0]];
+		return exists[0];
 	} else {
 		console.log(`Processing ${param.url}`);
 
@@ -69,7 +68,7 @@ const twitterSnap = async (param: { url: string; id: string }): Promise<[string,
 		});
 		await pipeline(nodeReadable, nodeWriteStream);
 
-		return [`Processed ${param.url}`, dir.url];
+		return dir.url;
 	}
 };
 
@@ -88,11 +87,8 @@ client.on("messageCreate", async (message) => {
 				return twitterSnap({ url: match[0], id: id! });
 			});
 
-			const [content, files] = unzip(res);
-
 			await processing.edit({
-				embeds: files.map((file) => new EmbedBuilder().setImage(file)),
-				content: content.join("\n"),
+				content: `Snapped successfully:\n${res.join("\n")}`,
 			});
 		}
 	} catch (e) {
@@ -115,11 +111,10 @@ client.on("interactionCreate", async (interaction) => {
 	try {
 		const { id } = [...url.matchAll(new RegExp(TWITTER_REGEX, "g"))][0]!.groups!;
 
-		const [content, file] = await twitterSnap({ url: url, id: id! });
+		const res = await twitterSnap({ url: url, id: id! });
 
 		await interaction.editReply({
-			embeds: [new EmbedBuilder().setImage(file)],
-			content: content,
+			content: `Snapped successfully:\n${res}`,
 		});
 	} catch (e) {
 		log.error(e);
