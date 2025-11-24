@@ -24,13 +24,4 @@ export const snapCommand = new SlashCommandBuilder()
 	.setDescription("Snap an image from Twitter or Pixiv")
 	.addStringOption((option) => {
 		return option.setName("url").setDescription("The URL of the Twitter or Pixiv post").setRequired(true);
-	})
-	.addStringOption((option) => {
-		return option.setName("theme").setDescription("The theme of the image").addChoices(snapTheme).setRequired(false);
-	})
-	.addIntegerOption((option) => {
-		return option.setName("width").setDescription("The width of the image").setRequired(false);
-	})
-	.addNumberOption((option) => {
-		return option.setName("scale").setDescription("The scale of the image").setRequired(false);
 	});

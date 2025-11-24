@@ -7,15 +7,17 @@
 		"run": "node dist/main.js"
 	},
 	"dependencies": {
-		"@hono/node-server": "^1.13.7",
-		"discord.js": "^14.16.3",
-		"dotenv": "^16.4.7",
-		"hono": "^4.6.15",
-		"twitter-snap": "^0.0.75"
+		"discord.js": "^14.25.1",
+		"dotenv": "^17.2.3",
+		"webdav": "^5.8.0",
+		"zod": "^4.1.12",
+		"pino": "^10.1.0",
+		"pino-pretty": "^13.1.2"
 	},
 	"devDependencies": {
 		"@types/node": "^20.17.11",
 		"tsx": "^4.19.2",
-		"typescript": "^5.7.2"
+		"typescript": "^5.7.2",
+		"@biomejs/biome": "2.3.7"
 	}
 }
