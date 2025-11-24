@@ -26,18 +26,19 @@ export const createIntractionChain = (interaction: ChatInputCommandInteraction) 
 	const reply = async (content: InteractionOption) => {
 		if (edited) {
 			await interaction.editReply(content);
-			edited = true;
 		} else {
 			if (content.ephemeral) {
 				await interaction.reply({ content: content.content, flags: [MessageFlags.Ephemeral] });
 			} else {
 				await interaction.reply({ content: content.content });
 			}
+			edited = true;
 		}
 	};
 
 	const deferReply = async () => {
 		await interaction.deferReply();
+		edited = true;
 	};
 	return { reply, deferReply };
 };

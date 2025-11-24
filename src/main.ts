@@ -76,6 +76,10 @@ const twitterSnap = async (param: { url: string; id: string }) => {
 	}
 };
 
+client.on("error", (error) => {
+	log.error({ error });
+});
+
 client.on("messageCreate", async (message) => {
 	if (message.author.bot) return;
 	if (!message.guild) return;
@@ -142,7 +146,7 @@ client.on("interactionCreate", async (interaction) => {
 		});
 	} catch (e) {
 		log.error(e);
-		await chain.reply({ content: "Failed to process the URL." });
+		await chain.reply({ content: "Failed to process the URL.", ephemeral: true });
 	}
 });
 
