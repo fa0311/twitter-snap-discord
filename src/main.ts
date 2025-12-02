@@ -45,10 +45,10 @@ const syncLoop = async <T1, T2>(items: T1[], callback: (item: T1) => Promise<T2>
 	return res;
 };
 
-const checkStorage = async (id: string) => {
+const checkStorage = async (name: string) => {
 	const existsCheck = await Promise.all(
 		["png", "mp4"].map(async (ext) => {
-			const path = storage.path(`${id}.${ext}`);
+			const path = storage.path(`${name}.${ext}`);
 			const exists = await path.exists();
 			return [path.url, exists] as const;
 		}),
