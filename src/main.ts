@@ -45,18 +45,23 @@ const syncLoop = async <T1, T2>(items: T1[], callback: (item: T1) => Promise<T2>
 	return res;
 };
 
-const twitterSnap = async (param: { url: string; id: string }) => {
+const checkStorage = async (id: string) => {
 	const existsCheck = await Promise.all(
 		["png", "mp4"].map(async (ext) => {
-			const path = storage.path(`${param.id}.${ext}`);
+			const path = storage.path(`${id}.${ext}`);
 			const exists = await path.exists();
 			return [path.url, exists] as const;
 		}),
 	);
 	const exists = existsCheck.find(([_, exists]) => exists);
+	return exists ? exists[0] : null;
+};
+
+const twitterSnap = async (param: { url: string; id: string }) => {
+	const exists = await checkStorage(param.id);
 	if (exists) {
 		console.log(`Exists ${param.url}`);
-		return exists[0];
+		return exists;
 	} else {
 		log.info(`Processing ${param.url}`);
 
