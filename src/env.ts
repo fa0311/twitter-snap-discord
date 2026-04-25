@@ -18,6 +18,9 @@ const env = parseEnv(
 			.string()
 			.transform((val) => parseInt(val, 10))
 			.default(1),
+
+		HEALTH_PORT: z.number().default(3000),
+		HEALTH_HOSTNAME: z.string().default("127.0.0.1"),
 	}),
 );
 

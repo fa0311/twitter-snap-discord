@@ -1,6 +1,8 @@
-import { Client, Routes } from "discord.js";
 import { Readable } from "node:stream";
 import { pipeline } from "node:stream/promises";
+import { serve } from "@hono/node-server";
+import { Client, Routes } from "discord.js";
+import { Hono } from "hono";
 import pino from "pino";
 import { getEnv } from "./env.js";
 import { createIntractionChain, createMessageChain } from "./utils/discord.js";
@@ -23,6 +25,8 @@ const log = pino({
 });
 
 const client = new Client({ intents: ["Guilds", "GuildMessages", "MessageContent"] });
+
+const app = new Hono();
 client.login(env.DISCORD_TOKEN);
 
 const storage = createWebdavClient({
@@ -166,3 +170,15 @@ client.on("clientReady", async () => {
 
 	console.log("Bot is ready");
 });
+
+app.get("/health", (c) => {
+	const ready = client.isReady();
+	const wsPing = client.ws.ping;
+
+	const ok = ready && wsPing < 10_000;
+	const body = { ok, ready, wsPing };
+
+	return c.json(body, ok ? 200 : 503);
+});
+
+serve({ fetch: app.fetch, port: env.HEALTH_PORT, hostname: env.HEALTH_HOSTNAME });
