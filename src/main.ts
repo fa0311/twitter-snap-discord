@@ -174,11 +174,8 @@ client.on("clientReady", async () => {
 app.get("/health", (c) => {
 	const ready = client.isReady();
 	const wsPing = client.ws.ping;
-
-	const ok = ready && wsPing < 10_000;
-	const body = { ok, ready, wsPing };
-
-	return c.json(body, ok ? 200 : 503);
+	const body = { ready, wsPing };
+	return c.json(body, ready ? 200 : 503);
 });
 
 serve({ fetch: app.fetch, port: env.HEALTH_PORT, hostname: env.HEALTH_HOSTNAME });
