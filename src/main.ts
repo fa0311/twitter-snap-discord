@@ -7,7 +7,7 @@ import pino from "pino";
 import { getEnv } from "./env.js";
 import { createIntractionChain, createMessageChain } from "./utils/discord.js";
 import { createMutex } from "./utils/mutex.js";
-import { TWITTER_REGEX } from "./utils/regex.js";
+import { PIXIV_REGEX, TWITTER_REGEX } from "./utils/regex.js";
 import { snapCommand } from "./utils/slashCommand.js";
 import { createWebdavClient } from "./utils/storage.js";
 import { createTwitterSnapClient, getExtByContentType } from "./utils/twitter-snap.js";
@@ -61,17 +61,17 @@ const checkStorage = async (name: string) => {
 	return exists ? exists[0] : null;
 };
 
-const twitterSnap = async (param: { url: string; id: string }) => {
+const twitterSnap = async (param: { url: string; id: string; mode: "twitter" | "pixiv"; dir?: string }) => {
 	const exists = await checkStorage(param.id);
 	if (exists) {
 		console.log(`Exists ${param.url}`);
 		return exists;
 	} else {
 		log.info(`Processing ${param.url}`);
-
-		const res = await snap.twitter(param.id);
+		const dirName = param.dir ? `${param.dir}/` : "";
+		const res = await snap[param.mode](param.id);
 		const ext = getExtByContentType(res.contentType);
-		const dir = storage.path(`${param.id}.${ext}`);
+		const dir = storage.path(`${dirName}${param.id}.${ext}`);
 		const nodeReadable = Readable.fromWeb(res.body);
 		const nodeWriteStream = await dir.createWriteStream({
 			headers: {
@@ -80,9 +80,19 @@ const twitterSnap = async (param: { url: string; id: string }) => {
 			},
 		});
 		await pipeline(nodeReadable, nodeWriteStream);
-
 		return dir.url;
 	}
+};
+
+const createMatchs = (message: string) => {
+	return [
+		...[...message.matchAll(new RegExp(TWITTER_REGEX, "g"))].map(
+			(match) => [match, () => twitterSnap({ url: match[0], id: match.groups!.id!, mode: "twitter" })] as const,
+		),
+		...[...message.matchAll(new RegExp(PIXIV_REGEX, "g"))].map(
+			(match) => [match, () => twitterSnap({ url: match[0], id: match.groups!.id!, mode: "pixiv", dir: "pixiv" })] as const,
+		),
+	];
 };
 
 client.on("error", (error) => {
@@ -94,7 +104,8 @@ client.on("messageCreate", async (message) => {
 	if (!message.guild) return;
 	if (!message.guild.channels.cache.find((channel) => channel.id === message.channelId)?.name.includes("twitter-snap")) return;
 
-	const matches = [...message.content.matchAll(new RegExp(TWITTER_REGEX, "g"))];
+	const matches = createMatchs(message.content);
+
 	const chain = createMessageChain(message);
 	try {
 		if (matches.length > 0) {
@@ -110,9 +121,8 @@ client.on("messageCreate", async (message) => {
 
 			await mutex.runExclusive(async () => {
 				await chain.reply({ content: "Processing..." });
-				const res = await syncLoop(matches, async (match) => {
-					const { id } = match.groups!;
-					return twitterSnap({ url: match[0], id: id! });
+				const res = await syncLoop(matches, async ([_, snap]) => {
+					return snap();
 				});
 				await chain.reply({
 					content: `Snapped successfully:\n${res.join("\n")}`,
@@ -131,15 +141,15 @@ client.on("interactionCreate", async (interaction) => {
 
 	const chain = createIntractionChain(interaction);
 
-	if (!new RegExp(TWITTER_REGEX, "g").test(url)) {
+	const matches = createMatchs(url);
+
+	if (matches.length === 0) {
 		await chain.reply({ content: "Invalid URL", ephemeral: true });
 		return;
 	}
 
 	await chain.deferReply();
 	try {
-		const { id } = [...url.matchAll(new RegExp(TWITTER_REGEX, "g"))][0]!.groups!;
-
 		if (mutex.isBusy(env.MUTEX_VALUE * 10)) {
 			log.warn("Server is busy");
 			await chain.reply({ content: "Server is busy, please try again later.", ephemeral: true });
@@ -147,11 +157,11 @@ client.on("interactionCreate", async (interaction) => {
 		}
 
 		const res = await mutex.runExclusive(async () => {
-			return [await twitterSnap({ url: url, id: id! })];
+			return matches[0]![1]();
 		});
 
 		await chain.reply({
-			content: `Snapped successfully:\n${res.join("\n")}`,
+			content: `Snapped successfully:\n${res}`,
 		});
 	} catch (e) {
 		log.error(e);
