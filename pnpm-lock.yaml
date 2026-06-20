@@ -10,7 +10,7 @@ importers:
     dependencies:
       '@hono/node-server':
         specifier: ^2.0.0
-        version: 2.0.0(hono@4.12.15)
+        version: 2.0.0(hono@4.12.25)
       async-mutex:
         specifier: ^0.5.0
         version: 0.5.0
@@ -21,8 +21,8 @@ importers:
         specifier: ^17.2.3
         version: 17.2.3
       hono:
-        specifier: ^4.12.15
-        version: 4.12.15
+        specifier: ^4.12.25
+        version: 4.12.25
       pino:
         specifier: ^10.1.0
         version: 10.1.0
@@ -404,8 +404,8 @@ packages:
   help-me@5.0.0:
     resolution: {integrity: sha512-7xgomUX6ADmcYzFik0HzAxh/73YlKR9bmFzf51CZwR+b6YtzU2m0u49hQCqV6SvlqIqsaxovfwdvbnsw3b/zpg==}
 
-  hono@4.12.15:
-    resolution: {integrity: sha512-qM0jDhFEaCBb4TxoW7f53Qrpv9RBiayUHo0S52JudprkhvpjIrGoU1mnnr29Fvd1U335ZFPZQY1wlkqgfGXyLg==}
+  hono@4.12.25:
+    resolution: {integrity: sha512-2NFaIyNVgJmBs/ecmtGzlmluTFs5cHEWGTdu0t1HBwYzoGXOL5nUQBRMXsXWla5i4KkG//QMzVP88m1+I3fdAQ==}
     engines: {node: '>=16.9.0'}
 
   hot-patcher@2.0.1:
@@ -740,9 +740,9 @@ snapshots:
   '@esbuild/win32-x64@0.23.1':
     optional: true
 
-  '@hono/node-server@2.0.0(hono@4.12.15)':
+  '@hono/node-server@2.0.0(hono@4.12.25)':
     dependencies:
-      hono: 4.12.15
+      hono: 4.12.25
 
   '@pinojs/redact@0.4.0': {}
 
@@ -875,7 +875,7 @@ snapshots:
 
   help-me@5.0.0: {}
 
-  hono@4.12.15: {}
+  hono@4.12.25: {}
 
   hot-patcher@2.0.1: {}
 
