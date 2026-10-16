@@ -1,4 +1,4 @@
-import { Readable } from "node:stream";
+import { Readable, type Writable } from "node:stream";
 import { pipeline } from "node:stream/promises";
 import { serve } from "@hono/node-server";
 import { Client, Routes } from "discord.js";
@@ -27,7 +27,7 @@ const log = pino({
 const client = new Client({ intents: ["Guilds", "GuildMessages", "MessageContent"] });
 
 const app = new Hono();
-client.login(env.DISCORD_TOKEN);
+void client.login(env.DISCORD_TOKEN);
 
 const storage = createWebdavClient({
 	url: env.WEBDAV_URL,
@@ -79,7 +79,7 @@ const twitterSnap = async (param: { url: string; id: string; mode: "twitter" | "
 				"Content-Length": res.length,
 			},
 		});
-		await pipeline(nodeReadable, nodeWriteStream);
+		await pipeline(nodeReadable, nodeWriteStream as Writable);
 		return dir.url;
 	}
 };
