@@ -1,4 +1,4 @@
-FROM node:24 AS builder
+FROM node:26 AS builder
 WORKDIR /app
 
 RUN corepack enable
@@ -8,7 +8,7 @@ COPY . .
 
 RUN pnpm build
 
-FROM node:24 AS production
+FROM node:26 AS production
 WORKDIR /app
 
 RUN corepack enable
